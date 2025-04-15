@@ -1,6 +1,7 @@
 using Infrastructure.EF;
 using Microsoft.AspNetCore.Identity;
 using Scalar.AspNetCore;
+using WebApi.Configuration;
 
 namespace WebApi;
 
@@ -17,6 +18,9 @@ public class Program
         builder.Services.AddIdentity<UserEntity, IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+        builder.Services.AddSingleton<JwtSettings>();
+        builder.Services.ConfigureJWT(new JwtSettings(builder.Configuration));
+        builder.Services.ConfigureCors();
         builder.Services.AddOpenApi();
 
         var app = builder.Build();
@@ -29,7 +33,6 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-
         app.UseAuthorization();
         app.MapControllers();
         app.Run();

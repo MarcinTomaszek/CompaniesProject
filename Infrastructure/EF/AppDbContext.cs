@@ -11,7 +11,8 @@ public class AppDbContext : IdentityDbContext<UserEntity>
         base.OnModelCreating(builder);
         var adminId = "eac0adc0-c5fc-4765-9f9d-b1ff1f8794c8";
         var adminCreatedAt = new DateTime(2025, 4, 8);
-        var hash = "AQAAAAIAAYagAAAAEH/Uosuypol2GlcgtIDtJclI3knRka6lxJEGB+D2azWAG09Y5wXUZuCm42ur+JqrYg==";
+        var hash = "AQAAAAIAAYagAAAAEGUrhuLXVMtD5o6jaa8JDUduAgPQFlY6biIUDgo7QQNYCSkoBju+mphU+qp8CnsB9Q==";
+        
         var adminUser = new UserEntity()
         {
             Id = adminId,
@@ -23,7 +24,6 @@ public class AppDbContext : IdentityDbContext<UserEntity>
             SecurityStamp = adminId,
             PasswordHash = hash
         };
-       
 
         builder.Entity<UserEntity>()
             .HasData(adminUser);
