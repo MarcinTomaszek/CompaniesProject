@@ -24,7 +24,7 @@ namespace WebApi.Controllers
                 Autor = "Bloch"
             });
         }
-        
+         
         private UserEntity? GetCurrentUser()
         {
             var user = HttpContext.User.Identity as ClaimsIdentity;

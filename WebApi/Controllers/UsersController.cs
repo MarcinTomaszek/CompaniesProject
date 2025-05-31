@@ -1,4 +1,5 @@
 using System.Text;
+using ApplicationCore.Models;
 using Infrastructure.EF;
 using JWT.Algorithms;
 using JWT.Builder;
@@ -34,6 +35,39 @@ namespace WebApi.Controllers
             
             return BadRequest(new {error ="Invalid user or Password"});
             
+        }
+        
+        [HttpPost("register")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Register(RegisterDto dto)
+        {
+            // Sprawdzenie, czy hasła się zgadzają
+            if (dto.Password != dto.RepPassword)
+                return BadRequest(new { error = "Passwords do not match" });
+
+            // Sprawdzenie, czy użytkownik już istnieje
+            var existingUser = await userManager.FindByNameAsync(dto.Login);
+            if (existingUser != null)
+                return BadRequest(new { error = "User already exists" });
+
+            // Utworzenie nowego użytkownika
+            var user = new UserEntity()
+            {
+                UserName = dto.Login,
+                Email = dto.Email,
+                Details = new UserDetails
+                {
+                    CreatedAt = DateTime.UtcNow // lub inna odpowiednia data
+                }
+            };
+
+            
+            var result = await userManager.CreateAsync(user, dto.Password);
+
+            if (!result.Succeeded)
+                return BadRequest(new { error = string.Join("; ", result.Errors.Select(e => e.Description)) });
+            
+            return Ok();
         }
         
         private string CreateToken(UserEntity user)
