@@ -30,6 +30,7 @@ public class AppTestFactory<TProgram>
             //     var connection = new SqliteConnection("Filename=:memory:");
             //     connection.Open();
             //     return connection;
+            //
             // });
 
             services
