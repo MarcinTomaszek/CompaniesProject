@@ -21,7 +21,7 @@ namespace WebApi.Controllers
             return Ok(new
             {
                 Title = "C#",
-                Autor = "Bloch"
+                Autor = "Bloch" 
             });
         }
          
