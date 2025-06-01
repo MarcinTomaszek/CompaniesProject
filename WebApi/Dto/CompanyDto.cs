@@ -1,21 +1,40 @@
 namespace WebApi.Dto;
 
+// public class CompanyDto
+// {
+//     /// <summary>Current c</summary>
+//     public int Rank { get; set; }
+//     public string Profile { get; set; }
+//     public string Name { get; set; }
+//     public string Url { get; set; }
+//     public string State { get; set; }
+//     public string Revenue { get; set; }
+//     public string GrowthPercent { get; set; }
+//     public string Industry { get; set; }
+//     public string Workers { get; set; }
+//     public string PreviousWorkers { get; set; }
+//     public int? Founded { get; set; }
+//     public int? YrsOnList { get; set; }
+//     public string Metro { get; set; }
+//     public string City { get; set; }
+// }
+
 public class CompanyDto
 {
+    /// <summary>Rank of the company.</summary>
     public int Rank { get; set; }
-    public string Profile { get; set; }
-    public string Name { get; set; }
-    public string Url { get; set; }
-    public string State { get; set; }
-    public string Revenue { get; set; }
-    public string GrowthPercent { get; set; }
-    public string Industry { get; set; }
-    public string Workers { get; set; }
-    public string PreviousWorkers { get; set; }
-    public int? Founded { get; set; }
-    public int? YrsOnList { get; set; }
-    public string Metro { get; set; }
-    public string City { get; set; }
+
+    /// <summary>Name of the company.</summary>
+    public string Name { get; set; } = null!;
+
+    /// <summary>Website URL of the company.</summary>
+    public string? Url { get; set; }
+
+    /// <summary>State of the company.</summary>
+    public string? State { get; set; }
+
+    /// <summary>City of the company.</summary>
+    public string? City { get; set; }
 }
 
 /// <summary>
@@ -37,13 +56,4 @@ public class CompaniesResponse
 
     /// <summary>Hypermedia links for navigation (HATEOAS).</summary>
     public List<LinkDto> Links { get; set; } = [];
-}
-
-public class LinkDto
-{
-    /// <summary>Link relation type (e.g. self, next, prev).</summary>
-    public string Rel { get; set; } = null!;
-
-    /// <summary>URL of the link.</summary>
-    public string Href { get; set; } = null!;
 }

@@ -40,13 +40,13 @@ namespace WebApi.Controllers
                 .OrderBy(c => c.Rank)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(c => new
+                .Select(c => new CompanyDto()
                 {
-                    c.Rank,
-                    c.Name,
-                    c.Url,
-                    c.State,
-                    c.City
+                    Rank = c.Rank,
+                    Name = c.Name,
+                    Url = c.Url,
+                    State = c.State,
+                    City = c.City
                 })
                 .ToList();
 
@@ -54,25 +54,34 @@ namespace WebApi.Controllers
 
             var totalPages = (int)Math.Ceiling((double)totalCompanies / pageSize);
 
-            var links = new List<object>
+            var links = new List<LinkDto>
             {
-                new { rel = "self", href = Url.Action("GetCompanies", new { page, pageSize }) }
+                new LinkDto(){ Rel = "self", Href = Url.Action("GetCompanies", new { page, pageSize }) }
             };
 
             if (page > 1)
             {
-                links.Add(new { rel = "prev", href = Url.Action("GetCompanies", new { page = page - 1, pageSize }) });
+                links.Add(new LinkDto(){ Rel = "prev", Href = Url.Action("GetCompanies", new { page = page - 1, pageSize }) });
             }
 
             if (page < totalPages)
             {
-                links.Add(new { rel = "next", href = Url.Action("GetCompanies", new { page = page + 1, pageSize }) });
+                links.Add(new LinkDto(){ Rel = "next", Href = Url.Action("GetCompanies", new { page = page + 1, pageSize }) });
             }
 
-            links.Add(new { rel = "first", href = Url.Action("GetCompanies", new { page = 1, pageSize }) });
-            links.Add(new { rel = "last", href = Url.Action("GetCompanies", new { page = totalPages, pageSize }) });
+            links.Add(new LinkDto(){ Rel = "first", Href = Url.Action("GetCompanies", new { page = 1, pageSize }) });
+            links.Add(new LinkDto(){ Rel = "last", Href = Url.Action("GetCompanies", new { page = totalPages, pageSize }) });
 
-            return Ok(new
+            // return Ok(new
+            // {
+            //     Page = page,
+            //     PageSize = pageSize,
+            //     TotalCount = totalCompanies,
+            //     Companies = companies,
+            //     Links = links
+            // });
+            
+            return Ok(new CompaniesResponse()
             {
                 Page = page,
                 PageSize = pageSize,
