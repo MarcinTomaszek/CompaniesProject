@@ -12,18 +12,22 @@ namespace WebApi;
 
 public partial class Program
 {
-    
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // 🔧 Wszystkie rejestracje
+        // 🔧 Rejestracja wszystkich usług
         builder.Services.AddAuthorization();
         builder.Services.AddControllers();
+
         builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(
+                builder.Configuration.GetConnectionString("DefaultConnection"),
+                sqlOptions => sqlOptions.MigrationsAssembly("Infrastructure")));
+
         builder.Services.AddIdentity<UserEntity, IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
+
         builder.Services.AddSingleton<JwtSettings>();
         builder.Services.ConfigureJWT(new JwtSettings(builder.Configuration));
         builder.Services.ConfigureCors();
@@ -31,8 +35,8 @@ public partial class Program
 
         var app = builder.Build();
 
-        // 💡 Tworzenie bazy danych - teraz przekazujemy gotowe `app`
-        CreateDataBase(app);
+        // 💡 Tworzenie bazy danych (z migracjami!)
+        CreateDatabaseIfNotExists(app);
 
         if (app.Environment.IsDevelopment())
         {
@@ -45,26 +49,21 @@ public partial class Program
         app.MapControllers();
         app.Run();
     }
-    
-    
-    public static void CreateDataBase(WebApplication app)
+
+    private static void CreateDatabaseIfNotExists(WebApplication app)
     {
         using var scope = app.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         
-        if (context.Database.CanConnect())
+        context.Database.Migrate();
+        Console.WriteLine("Baza danych została utworzona lub zaktualizowana.");
+        
+        if (context.Companies.Any())
         {
-            if (context.Companies.Any())
-            {
-                Console.WriteLine("Baza danych już istnieje i zawiera firmy. Nic nie robię.");
-                return;
-            }
+            Console.WriteLine("Baza danych już istnieje i zawiera firmy. Nic nie robię.");
+            return;
         }
-
-        context.Database.EnsureCreated();
-        Console.WriteLine("Baza danych została utworzona.");
-
-        // Użyj CsvHelper do odczytu Companies
+        
         var companiesCsvPath = "./Data/Inc 5000 Companies 2019.csv";
         using var reader = new StreamReader(companiesCsvPath);
         using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);

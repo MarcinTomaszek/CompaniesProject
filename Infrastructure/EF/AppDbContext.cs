@@ -47,5 +47,4 @@ public class AppDbContext : IdentityDbContext<UserEntity>
             .HasForeignKey(r => r.CompanyRank)
             .OnDelete(DeleteBehavior.Cascade);
     }
-    
 }
