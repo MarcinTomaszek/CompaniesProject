@@ -11,10 +11,10 @@ namespace WebApi.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Policy = "Bearer")]
-    public class BooksController(UserManager<UserEntity> userManager) : ControllerBase
+    public class CompaniesController(UserManager<UserEntity> userManager) : ControllerBase
     {
         [HttpGet]
-        public IActionResult GetBook()
+        public IActionResult GetCompanies()
         {
             Console.WriteLine(GetCurrentUser().UserName);
             

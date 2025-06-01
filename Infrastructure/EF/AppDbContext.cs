@@ -14,52 +14,38 @@ public class AppDbContext : IdentityDbContext<UserEntity>
     protected AppDbContext()
     {
     }
+    
+    public DbSet<CompanyEntity> Companies { get; set; }
+    public DbSet<ReviewEntity> Reviews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        var adminId = "eac0adc0-c5fc-4765-9f9d-b1ff1f8794c8";
-        var adminCreatedAt = new DateTime(2025, 4, 8);
-        var hash = "AQAAAAIAAYagAAAAEGUrhuLXVMtD5o6jaa8JDUduAgPQFlY6biIUDgo7QQNYCSkoBju+mphU+qp8CnsB9Q==";
-        string password = "1234!";
-        
-        // Tworzymy instancję PasswordHasher
-        var hasher = new PasswordHasher<object>();
-        
-        // Generujemy hash
-        string passwordHash = hasher.HashPassword(null, password);
-        
-        // Wyświetlamy wynik
-        Console.WriteLine("Hash dla hasła: " + passwordHash);
-        
-        var adminUser = new UserEntity()
-        {
-            Id = adminId,
-            Email = "admin@wsei.edu.pl",
-            NormalizedEmail = "ADMIN@WSEI.EDU.PL",
-            UserName = "admin",
-            NormalizedUserName = "ADMIN",
-            ConcurrencyStamp = adminId,
-            SecurityStamp = adminId,
-            PasswordHash = hash
-        };
 
         builder.Entity<UserEntity>()
-            .HasData(adminUser);
+            .OwnsOne(u => u.Details);
 
-        builder.Entity<UserEntity>()
-            .OwnsOne(u => u.Details)
-            .HasData(
-                new
-                {
-                    UserEntityId = adminId,
-                    CreatedAt = adminCreatedAt
-                }
-            );
-    }
+        // Konfiguracja klucza CompanyEntity
+        builder.Entity<CompanyEntity>()
+            .HasKey(c => c.Rank);
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseSqlite("Data Source=d:\\Data\\app.db");
+        // Konfiguracja klucza ReviewEntity
+        builder.Entity<ReviewEntity>()
+            .HasKey(r => r.Id);
+
+        // Relacja Review -> User
+        builder.Entity<ReviewEntity>()
+            .HasOne(r => r.User)
+            .WithMany() // jeśli UserEntity nie ma kolekcji Reviews
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Relacja Review -> Company
+        builder.Entity<ReviewEntity>()
+            .HasOne(r => r.Company)
+            .WithMany() // jeśli CompanyEntity nie ma kolekcji Reviews
+            .HasForeignKey(r => r.CompanyRank)
+            .OnDelete(DeleteBehavior.Cascade);
     }
+    
 }

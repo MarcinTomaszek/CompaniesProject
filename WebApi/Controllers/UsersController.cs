@@ -29,7 +29,6 @@ namespace WebApi.Controllers
             var result = await signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (result.Succeeded)
             {
-                //TODO zwróć token  
                 return Ok(new {token=CreateToken(user)});
             }
             
@@ -57,7 +56,7 @@ namespace WebApi.Controllers
                 Email = dto.Email,
                 Details = new UserDetails
                 {
-                    CreatedAt = DateTime.UtcNow // lub inna odpowiednia data
+                    CreatedAt = DateTime.UtcNow 
                 }
             };
 
