@@ -71,15 +71,6 @@ namespace WebApi.Controllers
 
             links.Add(new LinkDto(){ Rel = "first", Href = Url.Action("GetCompanies", new { page = 1, pageSize }) });
             links.Add(new LinkDto(){ Rel = "last", Href = Url.Action("GetCompanies", new { page = totalPages, pageSize }) });
-
-            // return Ok(new
-            // {
-            //     Page = page,
-            //     PageSize = pageSize,
-            //     TotalCount = totalCompanies,
-            //     Companies = companies,
-            //     Links = links
-            // });
             
             return Ok(new CompaniesResponse()
             {
@@ -156,21 +147,60 @@ namespace WebApi.Controllers
             });
         }
 
-        
-        [HttpGet]
-        [Route("User")]
-        public UserEntity? GetCurrentUser()
+        [HttpPost]
+        [Authorize(Policy = "Bearer")]
+        public async Task<IActionResult> CreateCompany([FromBody] CompanyCreateDto dto)
         {
-            var user = HttpContext.User.Identity as ClaimsIdentity;
+            int nextRank = (_dbContext.Companies.Any())
+                ? _dbContext.Companies.Max(c => c.Rank) + 1
+                : 1;
 
-            if (user != null)
+            var company = new CompanyEntity
             {
-                string username = user.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Name)?.Value;
+                Rank = nextRank,
+                Name = dto.Name,
+                Url = dto.Url,
+                State = dto.State,
+                City = dto.City,
+                GrowthPercent = dto.GrowthPercent,
+                Workers = dto.Workers,
+                Founded = dto.Founded,
+                YrsOnList = dto.YrsOnList,
+                PreviousWorkers = dto.PreviousWorkers,
+                Metro = dto.Metro,
+                Revenue = dto.Revenue,
+                Industry = dto.Industry,
+                Profile = dto.Profile
+            };
 
-                return _userManager.FindByNameAsync(username).Result;
-            }
+            _dbContext.Companies.Add(company);
+            await _dbContext.SaveChangesAsync();
 
-            return null;
+            return CreatedAtAction(nameof(GetCompanyById), new { rank = nextRank }, company);
+        }
+        
+        
+        [HttpGet("{rank}")]
+        [Authorize(Policy = "Bearer")]
+        public async Task<IActionResult> GetCompanyById(int rank)
+        {
+            var company = await _dbContext.Companies.FindAsync(rank);
+            if (company == null) return NotFound();
+
+            return Ok(company);
+        }
+        
+        [HttpDelete("{rank}")]
+        [Authorize(Policy = "Bearer")]
+        public async Task<IActionResult> DeleteCompany(int rank)
+        {
+            var company = await _dbContext.Companies.FindAsync(rank);
+            if (company == null) return NotFound();
+
+            _dbContext.Companies.Remove(company);
+            await _dbContext.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
