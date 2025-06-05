@@ -6,6 +6,7 @@ using Infrastructure.EF;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApi.Dto;
 
 namespace WebApi.Controllers
@@ -201,6 +202,35 @@ namespace WebApi.Controllers
             await _dbContext.SaveChangesAsync();
 
             return NoContent();
+        }
+        
+        [HttpPut("{rank}")]
+        [Authorize(Policy = "Bearer")]
+        public async Task<IActionResult> UpdateCompany(int rank, [FromBody] CompanyCreateDto dto)
+        {
+            var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.Rank == rank);
+            if (company == null)
+            {
+                return NotFound(new { message = $"Company with rank {rank} not found." });
+            }
+
+            company.Name = dto.Name;
+            company.Url = dto.Url;
+            company.State = dto.State;
+            company.City = dto.City;
+            company.GrowthPercent = dto.GrowthPercent;
+            company.Workers = dto.Workers;
+            company.Founded = dto.Founded;
+            company.YrsOnList = dto.YrsOnList;
+            company.PreviousWorkers = dto.PreviousWorkers;
+            company.Metro = dto.Metro;
+            company.Revenue = dto.Revenue;
+            company.Industry = dto.Industry;
+            company.Profile = dto.Profile;
+
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(company);
         }
     }
 }
