@@ -182,7 +182,6 @@ namespace WebApi.Controllers
         
         
         [HttpGet("{rank}")]
-        [Authorize(Policy = "Bearer")]
         public async Task<IActionResult> GetCompanyById(int rank)
         {
             var company = await _dbContext.Companies.FindAsync(rank);
