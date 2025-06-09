@@ -22,17 +22,33 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
     public IActionResult GetReviews(
         [FromRoute] int companyRank,
         [FromQuery, Description("Page number (default is 1).")] int page = 1,
-        [FromQuery, Description("Reviews per page (default is 10).")] int pageSize = 10)
+        [FromQuery, Description("Reviews per page (default is 10).")] int pageSize = 10,
+        [FromQuery, Description("Text to search in usernames.")] string? search = null,
+        [FromQuery, Description("Field to sort by: id, username, content.")] string? sortBy = "id",
+        [FromQuery, Description("Sort descending (true/false).")] bool descending = true)
     {
         var query = dbContext.Reviews
             .Include(r => r.User)
             .Include(r => r.Company)
             .Where(r => r.CompanyRank == companyRank);
+        
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            search = search.ToLower();
+            query = query.Where(r =>
+                r.User.UserName.ToLower().Contains(search));
+        }
+        
+        query = sortBy?.ToLower() switch
+        {
+            "username" => descending ? query.OrderByDescending(r => r.User.UserName) : query.OrderBy(r => r.User.UserName),
+            "content" => descending ? query.OrderByDescending(r => r.Content) : query.OrderBy(r => r.Content),
+            _ => descending ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id)
+        };
 
         var totalCount = query.Count();
 
         var reviews = query
-            .OrderByDescending(r => r.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new ReviewDisplayDto
@@ -48,13 +64,14 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
 
         var links = new List<LinkDto>
         {
-            new() { Rel = "self", Href = Url.Action("GetReviews", new { companyRank, page, pageSize }) }
+            new() { Rel = "self", Href = Url.Action("GetReviews", new { companyRank, page, pageSize, search, sortBy, descending }) }
         };
 
         if (page > 1)
-            links.Add(new() { Rel = "prev", Href = Url.Action("GetReviews", new { companyRank, page = page - 1, pageSize }) });
+            links.Add(new() { Rel = "prev", Href = Url.Action("GetReviews", new { companyRank, page = page - 1, pageSize, search, sortBy, descending }) });
+
         if (page < totalPages)
-            links.Add(new() { Rel = "next", Href = Url.Action("GetReviews", new { companyRank, page = page + 1, pageSize }) });
+            links.Add(new() { Rel = "next", Href = Url.Action("GetReviews", new { companyRank, page = page + 1, pageSize, search, sortBy, descending }) });
 
         return Ok(new ReviewsResposne
         {
@@ -65,6 +82,7 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
             Links = links
         });
     }
+
 
     [HttpPost]
     [Authorize]
