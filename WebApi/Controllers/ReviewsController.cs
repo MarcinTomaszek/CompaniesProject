@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Dto;
+using WebApi.Dto.ReviewDTOs;
 
 namespace WebApi.Controllers;
 
@@ -15,12 +16,11 @@ namespace WebApi.Controllers;
 [Authorize(Policy = "Bearer")]
 public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> userManager) : ControllerBase
 {
-    
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(ReviewsResposne), StatusCodes.Status200OK)]
     public IActionResult GetReviews(
-        int companyRank,
+        [FromRoute] int companyRank,
         [FromQuery, Description("Page number (default is 1).")] int page = 1,
         [FromQuery, Description("Reviews per page (default is 10).")] int pageSize = 10)
     {
@@ -35,14 +35,12 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
             .OrderByDescending(r => r.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => new ReviewDto
+            .Select(r => new ReviewDisplayDto
             {
-                Id = r.Id,
-                UserId = r.UserId,
-                CompanyRank = r.CompanyRank,
-                Content = r.Content,
-                User = r.User,
-                Company = r.Company
+                ReviewId = r.Id.ToString(),
+                CompanyName = r.Company.Name,
+                UserName = r.User.UserName,
+                Content = r.Content
             })
             .ToList();
 
@@ -68,21 +66,21 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
         });
     }
 
-
     [HttpPost]
-    public async Task<IActionResult> CreateReview(int rank, [FromBody] ReviewCreateDto dto)
+    [Authorize]
+    public async Task<IActionResult> CreateReview([FromRoute] int companyRank, [FromBody] ReviewCreateDto dto)
     {
-        var user = await userManager.GetUserAsync(User);
+        var user =  GetCurrentUser();
         if (user == null)
             return Unauthorized();
 
-        var company = await dbContext.Companies.FirstOrDefaultAsync(c => c.Rank == rank);
+        var company = await dbContext.Companies.FirstOrDefaultAsync(c => c.Rank == companyRank);
         if (company == null)
             return NotFound();
 
         var review = new ReviewEntity
         {
-            CompanyRank = rank,
+            CompanyRank = companyRank,
             UserId = user.Id,
             Content = dto.Content
         };
@@ -90,64 +88,84 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
         dbContext.Reviews.Add(review);
         await dbContext.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetReviewById), new { rank }, review);
+        var responseDto = new ReviewDisplayDto
+        {
+            ReviewId = review.Id.ToString(),
+            CompanyName = company.Name,
+            UserName = user.UserName,
+            Content = review.Content
+        };
+
+        return Ok(responseDto);
     }
-
-
-    [HttpGet("{rank}")]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetReviewById(int rank)
+    
+    [HttpPut("{reviewId}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateReview(
+        [FromRoute] int companyRank,
+        [FromRoute] int reviewId,
+        [FromBody] string updatedContent)
     {
+        var user = GetCurrentUser();
+        if (user == null)
+            return Unauthorized();
+
         var review = await dbContext.Reviews
             .Include(r => r.User)
             .Include(r => r.Company)
-            .FirstOrDefaultAsync(r => r.CompanyRank == rank);
+            .FirstOrDefaultAsync(r => r.Id == reviewId && r.CompanyRank == companyRank);
 
-        if (review is null)
+        if (review == null)
             return NotFound();
 
-        return Ok(new ReviewDto
-        {
-            Id = review.Id,
-            UserId = review.UserId,
-            CompanyRank = review.CompanyRank,
-            Content = review.Content,
-            User = review.User,
-            Company = review.Company
-        });
-    }
-
-    [HttpPut("{rank}")]
-    public async Task<IActionResult> UpdateReview(int rank, [FromBody] string updatedContent)
-    {
-        var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        var review = await dbContext.Reviews.FirstOrDefaultAsync(r => r.CompanyRank == rank);
-
-        if (review is null)
-            return NotFound();
-        if (review.UserId != userId)
+        if (review.UserId != user.Id)
             return Forbid();
 
         review.Content = updatedContent;
         await dbContext.SaveChangesAsync();
 
-        return Ok(review);
+        var responseDto = new ReviewDisplayDto
+        {
+            ReviewId = review.Id.ToString(),
+            CompanyName = review.Company.Name,
+            UserName = review.User.UserName,
+            Content = review.Content
+        };
+
+        return Ok(responseDto);
     }
 
-    [HttpDelete("{rank}")]
-    public async Task<IActionResult> DeleteReview(int rank)
-    {
-        var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        var review = await dbContext.Reviews.FirstOrDefaultAsync(r =>r.CompanyRank == rank);
 
-        if (review is null)
+    [HttpDelete("{reviewId}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteReview([FromRoute] int companyRank, [FromRoute] int reviewId)
+    {
+        var user =  GetCurrentUser();
+        if (user == null)
+            return Unauthorized();
+        
+        var review = await dbContext.Reviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.CompanyRank == companyRank);
+
+        if (review == null)
             return NotFound();
-        if (review.UserId != userId)
-            return Forbid();
 
         dbContext.Reviews.Remove(review);
         await dbContext.SaveChangesAsync();
 
         return NoContent();
+    }
+    
+    private UserEntity? GetCurrentUser()
+    {
+        var user = HttpContext.User.Identity as ClaimsIdentity;
+
+        if (user != null)
+        {
+            string username = user.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Name)?.Value;
+
+            return userManager.FindByNameAsync(username).Result;
+        }
+
+        return null;
     }
 }

@@ -1,6 +1,6 @@
 using Infrastructure.EF;
 
-namespace WebApi.Dto;
+namespace WebApi.Dto.ReviewDTOs;
 
 public class ReviewDto
 {
@@ -28,7 +28,7 @@ public class ReviewsResposne
     public int TotalCount { get; set; }
 
     /// <summary>List of reviews.</summary>
-    public List<ReviewDto> Reviews { get; set; } = [];
+    public List<ReviewDisplayDto> Reviews { get; set; } = [];
     
     /// <summary>Hypermedia links for navigation (HATEOAS).</summary>
     public List<LinkDto> Links { get; set; } = [];

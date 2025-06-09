@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApi.Dto;
+using WebApi.Dto.CompanyDTOs;
 
 namespace WebApi.Controllers
 {

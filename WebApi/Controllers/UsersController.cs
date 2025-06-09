@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using ApplicationCore.Models;
 using Infrastructure.EF;
@@ -11,6 +12,7 @@ using Microsoft.Identity.Client.Instance.Discovery;
 using Microsoft.IdentityModel.JsonWebTokens;
 using WebApi.Configuration;
 using WebApi.Dto;
+using WebApi.Dto.UserDTOs;
 
 namespace WebApi.Controllers
 {
