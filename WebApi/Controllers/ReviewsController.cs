@@ -86,8 +86,7 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
 
 
     [HttpPost]
-    [Authorize]
-    [EndpointDescription("Create a new review for desired company.")]
+    [EndpointDescription("Create a new review for desired company for logged users only.")]
     [ProducesResponseType(typeof(ReviewDisplayDto), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateReview([FromRoute ,Description("Rank of commented company")] int companyRank, 
         [FromBody] ReviewCreateDto dto)
@@ -122,8 +121,7 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
     }
     
     [HttpPut("{reviewId}")]
-    [Authorize]
-    [EndpointDescription("Modifies a review for desired company.")]
+    [EndpointDescription("Modifies a review for desired company for logged users only.")]
     [ProducesResponseType(typeof(ReviewDisplayDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateReview(
         [FromRoute, Description("Rank of desired company")] int companyRank,
@@ -161,8 +159,7 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
 
 
     [HttpDelete("{reviewId}")]
-    [Authorize]
-    [EndpointDescription("Delete a review for desired company.")]
+    [EndpointDescription("Delete a review for desired company for logged users only.")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteReview([FromRoute, Description("Rank of desired company")] int companyRank, 
         [FromRoute, Description("Id of review to delete")] int reviewId)
