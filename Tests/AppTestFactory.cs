@@ -1,45 +1,63 @@
-using System.Data.Common;
 using Infrastructure.EF;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Test;
 
-public class AppTestFactory<TProgram>
-    : WebApplicationFactory<TProgram> where TProgram : class
+public class AppTestFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    public bool SeedData { get; set; } = true; // domyślnie seeding włączony
+
+    protected override IHost CreateHost(IHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
+
         builder.ConfigureServices(services =>
         {
-            var dbContextDescriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                     typeof(DbContextOptions<AppDbContext>));
-            services.Remove(dbContextDescriptor);
-            var dbConnectionDescriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                     typeof(DbConnection));
+            // Usuń stare konfiguracje DbContext
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+            if (descriptor != null)
+            {
+                services.Remove(descriptor);
+            }
 
-            services.Remove(dbConnectionDescriptor);
-
-            // Create open SqliteConnection so EF won't automatically close it.
-            // services.AddSingleton<DbConnection>(container =>
-            // {
-            //     var connection = new SqliteConnection("Filename=:memory:");
-            //     connection.Open();
-            //     return connection;
-            //
-            // });
-
-            services
-                .AddEntityFrameworkInMemoryDatabase()
-                .AddDbContext<AppDbContext>((container, options) =>
+            // Użyj losowej bazy InMemory (dla izolacji testów)
+            var dbName = Guid.NewGuid().ToString();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase(dbName));
+            var provider = services.BuildServiceProvider();
+            using var scope = provider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.EnsureCreated();
+            
+            if (SeedData)
+            {
+                db.Companies.Add(new CompanyEntity
                 {
-                    options.UseInMemoryDatabase("AppTest").UseInternalServiceProvider(container);
+                    Rank = 1,
+                    Name = "Test Company",
+                    Profile = "Test",
+                    Url = "http://example.com",
+                    State = "NY",
+                    Revenue = "10M",
+                    GrowthPercent = "100%",
+                    Industry = "Tech",
+                    Workers = "100",
+                    PreviousWorkers = "50",
+                    Founded = 2000,
+                    YrsOnList = 1,
+                    Metro = "NY Metro",
+                    City = "New York"
                 });
+                db.SaveChanges();
+            }
         });
-        builder.UseEnvironment("Development");
+
+        return base.CreateHost(builder);
     }
 }

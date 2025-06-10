@@ -2,6 +2,7 @@ using System.Globalization;
 using ApplicationCore.Models;
 using CsvHelper;
 using Infrastructure.EF;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -20,14 +21,17 @@ public partial class Program
         builder.Logging.AddConsole();
         builder.Logging.AddDebug(); 
 
-        // 🔧 Rejestracja wszystkich usług
         builder.Services.AddAuthorization();
         builder.Services.AddControllers();
+        
+        if (!builder.Environment.IsEnvironment("Testing"))
+        {
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    sqlOptions => sqlOptions.MigrationsAssembly("Infrastructure")));
+        }
 
-        builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(
-                builder.Configuration.GetConnectionString("DefaultConnection"),
-                sqlOptions => sqlOptions.MigrationsAssembly("Infrastructure")));
 
         builder.Services.AddIdentity<UserEntity, IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>();
@@ -39,8 +43,10 @@ public partial class Program
 
         var app = builder.Build();
 
-        // 💡 Tworzenie bazy danych (z migracjami!)
-        CreateDatabaseIfNotExists(app);
+        if (!app.Environment.IsEnvironment("Testing"))
+        {
+            CreateDatabaseIfNotExists(app);
+        }
 
         if (app.Environment.IsDevelopment())
         {
@@ -49,6 +55,7 @@ public partial class Program
         }
 
         app.UseHttpsRedirection();
+        app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
         app.Run();
