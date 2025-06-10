@@ -27,9 +27,11 @@ namespace WebApi.Controllers
             _userManager = userManager;
         }
         
+            
         [HttpGet]
         [AllowAnonymous]
-        [ProducesResponseType(typeof(CompaniesResponse), StatusCodes.Status200OK)]
+        [EndpointDescription("Get list of companies for logged-in users.")]
+        [ProducesResponseType(typeof(CompaniesResponseDto), StatusCodes.Status200OK)]
         public IActionResult GetCompanies(
             [FromQuery, Description("Page number of the companies list (default is 1).")] int page = 1,
             [FromQuery, Description("Number of companies per page (default is 20).")] int pageSize = 20,
@@ -86,7 +88,7 @@ namespace WebApi.Controllers
             links.Add(new LinkDto { Rel = "first", Href = Url.Action("GetCompanies", new { page = 1, pageSize, search, sortBy, descending }) });
             links.Add(new LinkDto { Rel = "last", Href = Url.Action("GetCompanies", new { page = totalPages, pageSize, search, sortBy, descending }) });
 
-            return Ok(new CompaniesResponse
+            return Ok(new CompaniesResponseDto
             {
                 Page = page,
                 PageSize = pageSize,
@@ -97,9 +99,8 @@ namespace WebApi.Controllers
         }
 
         [HttpGet("detailed")]
-        [Authorize(Policy = "Bearer")]
-        [EndpointDescription("Get detailed list of companies for logged-in users.")]
-        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [EndpointDescription("Get detailed list of companies for logged-in users only.")]
+        [ProducesResponseType(typeof(CompaniesDetailedResponseDto), StatusCodes.Status200OK)]
         public IActionResult GetCompaniesDetailed(
             [FromQuery, Description("Page number of the companies list (default is 1).")] int page = 1,
             [FromQuery, Description("Number of companies per page (default is 20).")] int pageSize = 20,
@@ -176,7 +177,10 @@ namespace WebApi.Controllers
         }
         
         [HttpGet("{rank}")]
-        public async Task<IActionResult> GetCompanyById(int rank)
+        [AllowAnonymous]
+        [EndpointDescription("Gets company.")]
+        [ProducesResponseType(typeof(CompanyEntity), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetCompanyById([FromRoute, Description("Rank of the desired company")]int rank)
         {
             var company = await _dbContext.Companies.FindAsync(rank);
             if (company == null) return NotFound();
@@ -184,9 +188,44 @@ namespace WebApi.Controllers
             return Ok(company);
         }
         
+        [HttpPost]
+        [EndpointDescription("Add new company for logged users only.")]
+        [ProducesResponseType(typeof(CompanyCreateDto), StatusCodes.Status201Created)]
+        public async Task<IActionResult> CreateCompany([FromBody] CompanyCreateDto dto)
+        {
+            int nextRank = (_dbContext.Companies.Any())
+                ? _dbContext.Companies.Max(c => c.Rank) + 1
+                : 1;
+
+            var company = new CompanyEntity
+            {
+                Rank = nextRank,
+                Name = dto.Name,
+                Url = dto.Url,
+                State = dto.State,
+                City = dto.City,
+                GrowthPercent = dto.GrowthPercent,
+                Workers = dto.Workers,
+                Founded = dto.Founded,
+                YrsOnList = dto.YrsOnList,
+                PreviousWorkers = dto.PreviousWorkers,
+                Metro = dto.Metro,
+                Revenue = dto.Revenue,
+                Industry = dto.Industry,
+                Profile = dto.Profile
+            };
+
+            _dbContext.Companies.Add(company);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetCompanyById), new { rank = nextRank }, company);
+        }
+        
         [HttpDelete("{rank}")]
         [Authorize(Policy = "Bearer")]
-        public async Task<IActionResult> DeleteCompany(int rank)
+        [EndpointDescription("Delete a company for logged users only.")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteCompany([FromRoute, Description("Rank of the company to delete")] int rank)
         {
             var company = await _dbContext.Companies.FindAsync(rank);
             if (company == null) return NotFound();
@@ -199,7 +238,9 @@ namespace WebApi.Controllers
         
         [HttpPut("{rank}")]
         [Authorize(Policy = "Bearer")]
-        public async Task<IActionResult> UpdateCompany(int rank, [FromBody] CompanyCreateDto dto)
+        [EndpointDescription("Modifies a company for logged users only.")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateCompany([FromRoute, Description("Rank of the company to modify")]int rank, [FromBody, Description("Modified company")] CompanyCreateDto dto)
         {
             var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.Rank == rank);
             if (company == null)

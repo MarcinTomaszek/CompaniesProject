@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Security.Claims;
 using System.Text;
 using ApplicationCore.Models;
@@ -22,7 +23,8 @@ namespace WebApi.Controllers
     {
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login(LoginDto dto)
+        [EndpointDescription("Log in to already existing account")]
+        public async Task<IActionResult> Login([FromBody,Description("Log in to account using credentials")]LoginDto dto)
         {
             var user = await userManager.FindByNameAsync(dto.Login);
             if (user is null)
@@ -40,18 +42,16 @@ namespace WebApi.Controllers
         
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<IActionResult> Register(RegisterDto dto)
+        [EndpointDescription("Register new user")]
+        public async Task<IActionResult> Register([FromBody,Description("Credentials to make new account")]RegisterDto dto)
         {
-            // Sprawdzenie, czy hasła się zgadzają
             if (dto.Password != dto.RepPassword)
                 return BadRequest(new { error = "Passwords do not match" });
-
-            // Sprawdzenie, czy użytkownik już istnieje
+            
             var existingUser = await userManager.FindByNameAsync(dto.Login);
             if (existingUser != null)
                 return BadRequest(new { error = "User already exists" });
-
-            // Utworzenie nowego użytkownika
+            
             var user = new UserEntity()
             {
                 UserName = dto.Login,

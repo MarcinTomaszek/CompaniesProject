@@ -18,9 +18,10 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
 {
     [HttpGet]
     [AllowAnonymous]
+    [EndpointDescription("Get list of reviews for desired company.")]
     [ProducesResponseType(typeof(ReviewsResposne), StatusCodes.Status200OK)]
     public IActionResult GetReviews(
-        [FromRoute] int companyRank,
+        [FromRoute, Description("Rank of the Company")] int companyRank,
         [FromQuery, Description("Page number (default is 1).")] int page = 1,
         [FromQuery, Description("Reviews per page (default is 10).")] int pageSize = 10,
         [FromQuery, Description("Text to search in usernames.")] string? search = null,
@@ -86,7 +87,10 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateReview([FromRoute] int companyRank, [FromBody] ReviewCreateDto dto)
+    [EndpointDescription("Create a new review for desired company.")]
+    [ProducesResponseType(typeof(ReviewDisplayDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateReview([FromRoute ,Description("Rank of commented company")] int companyRank, 
+        [FromBody] ReviewCreateDto dto)
     {
         var user =  GetCurrentUser();
         if (user == null)
@@ -119,9 +123,11 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
     
     [HttpPut("{reviewId}")]
     [Authorize]
+    [EndpointDescription("Modifies a review for desired company.")]
+    [ProducesResponseType(typeof(ReviewDisplayDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateReview(
-        [FromRoute] int companyRank,
-        [FromRoute] int reviewId,
+        [FromRoute, Description("Rank of desired company")] int companyRank,
+        [FromRoute, Description("Id of review to modify")] int reviewId,
         [FromBody] string updatedContent)
     {
         var user = GetCurrentUser();
@@ -156,7 +162,10 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
 
     [HttpDelete("{reviewId}")]
     [Authorize]
-    public async Task<IActionResult> DeleteReview([FromRoute] int companyRank, [FromRoute] int reviewId)
+    [EndpointDescription("Delete a review for desired company.")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> DeleteReview([FromRoute, Description("Rank of desired company")] int companyRank, 
+        [FromRoute, Description("Id of review to delete")] int reviewId)
     {
         var user =  GetCurrentUser();
         if (user == null)
