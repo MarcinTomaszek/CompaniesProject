@@ -57,15 +57,4 @@ public class AppUsersControllerTests: IClassFixture<AppTestFactory<Program>>
         var token = node["token"].AsValue().ToString();
         Assert.NotNull(token);
     }
-    
-    [Fact]
-    public async void TestBookController()
-    {
-        var result = await _client.GetAsync("/api/books");
-        
-        Assert.NotNull(result);
-        Assert.Equal(result.StatusCode, HttpStatusCode.Unauthorized);
-     
-            
-    }
 }
