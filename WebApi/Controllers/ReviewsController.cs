@@ -88,6 +88,8 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
     [HttpPost]
     [EndpointDescription("Create a new review for desired company for logged users only.")]
     [ProducesResponseType(typeof(ReviewDisplayDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CreateReview([FromRoute ,Description("Rank of commented company")] int companyRank, 
         [FromBody] ReviewCreateDto dto)
     {
@@ -123,6 +125,9 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
     [HttpPut("{reviewId}")]
     [EndpointDescription("Modifies a review for desired company for logged users only.")]
     [ProducesResponseType(typeof(ReviewDisplayDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateReview(
         [FromRoute, Description("Rank of desired company")] int companyRank,
         [FromRoute, Description("Id of review to modify")] int reviewId,
@@ -161,6 +166,8 @@ public class ReviewsController(AppDbContext dbContext, UserManager<UserEntity> u
     [HttpDelete("{reviewId}")]
     [EndpointDescription("Delete a review for desired company for logged users only.")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> DeleteReview([FromRoute, Description("Rank of desired company")] int companyRank, 
         [FromRoute, Description("Id of review to delete")] int reviewId)
     {

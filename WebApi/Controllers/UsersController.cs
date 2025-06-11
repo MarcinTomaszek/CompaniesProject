@@ -1,18 +1,14 @@
 using System.ComponentModel;
-using System.Security.Claims;
 using System.Text;
 using ApplicationCore.Models;
 using Infrastructure.EF;
 using JWT.Algorithms;
 using JWT.Builder;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Client.Instance.Discovery;
 using Microsoft.IdentityModel.JsonWebTokens;
 using WebApi.Configuration;
-using WebApi.Dto;
 using WebApi.Dto.UserDTOs;
 
 namespace WebApi.Controllers
@@ -24,6 +20,8 @@ namespace WebApi.Controllers
         [HttpPost("login")]
         [AllowAnonymous]
         [EndpointDescription("Log in to already existing account")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Login([FromBody,Description("Log in to account using credentials")]LoginDto dto)
         {
             var user = await userManager.FindByNameAsync(dto.Login);
@@ -43,6 +41,8 @@ namespace WebApi.Controllers
         [HttpPost("register")]
         [AllowAnonymous]
         [EndpointDescription("Register new user")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> Register([FromBody,Description("Credentials to make new account")]RegisterDto dto)
         {
             if (dto.Password != dto.RepPassword)

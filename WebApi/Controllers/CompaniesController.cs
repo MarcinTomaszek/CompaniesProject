@@ -1,7 +1,4 @@
 using System.ComponentModel;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Xml.Serialization;
 using Infrastructure.EF;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -180,6 +177,7 @@ namespace WebApi.Controllers
         [AllowAnonymous]
         [EndpointDescription("Gets company.")]
         [ProducesResponseType(typeof(CompanyEntity), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCompanyById([FromRoute, Description("Rank of the desired company")]int rank)
         {
             var company = await _dbContext.Companies.FindAsync(rank);
@@ -224,7 +222,8 @@ namespace WebApi.Controllers
         [HttpDelete("{rank}")]
         [Authorize(Policy = "Bearer")]
         [EndpointDescription("Delete a company for logged users only.")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteCompany([FromRoute, Description("Rank of the company to delete")] int rank)
         {
             var company = await _dbContext.Companies.FindAsync(rank);
@@ -240,6 +239,7 @@ namespace WebApi.Controllers
         [Authorize(Policy = "Bearer")]
         [EndpointDescription("Modifies a company for logged users only.")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateCompany([FromRoute, Description("Rank of the company to modify")]int rank, [FromBody, Description("Modified company")] CompanyCreateDto dto)
         {
             var company = await _dbContext.Companies.FirstOrDefaultAsync(c => c.Rank == rank);
