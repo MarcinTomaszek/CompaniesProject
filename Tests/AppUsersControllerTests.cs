@@ -5,7 +5,6 @@ using Infrastructure.EF;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using WebApi;
-using WebApi.Dto;
 using WebApi.Dto.UserDTOs;
 
 namespace Test;

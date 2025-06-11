@@ -1,11 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
 using Infrastructure.EF;
-using Microsoft.Extensions.DependencyInjection;
 using WebApi;
-using Xunit;
 
 namespace Test;
 
@@ -142,5 +139,94 @@ public class CompaniesControllerTests : IClassFixture<AppTestFactory<Program>>
         var content = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain("Test Company", content);
     }
+    
+    [Fact]
+    public async Task PutCompany_UpdatesExistingCompany()
+    {
+        // Utwórz firmę
+        var companyDto = new
+        {
+            profile = "Profil testowy",
+            name = "PutCo",
+            url = "http://putco.example.com",
+            state = "CA",
+            revenue = "1M",
+            growthPercent = "10%",
+            industry = "Fintech",
+            workers = "50",
+            previousWorkers = "40",
+            founded = 2020,
+            yrsOnList = 1,
+            metro = "San Francisco",
+            city = "SF"
+        };
 
+        var postResponse = await _client.PostAsJsonAsync("/api/companies", companyDto);
+        postResponse.EnsureSuccessStatusCode();
+
+        // Pobierz rank utworzonej firmy
+        var createdCompany = await postResponse.Content.ReadFromJsonAsync<CompanyEntity>();
+        var rank = createdCompany?.Rank ?? throw new Exception("Nie udało się pobrać rank.");
+
+        // Zmodyfikuj dane firmy
+        var updatedCompanyDto = new
+        {
+            profile = "Zaktualizowany profil",
+            name = "UpdatedPutCo",
+            url = "http://putco-updated.example.com",
+            state = "TX",
+            revenue = "2M",
+            growthPercent = "15%",
+            industry = "AI",
+            workers = "60",
+            previousWorkers = "50",
+            founded = 2019,
+            yrsOnList = 2,
+            metro = "Austin",
+            city = "Austin"
+        };
+
+        var putResponse = await _client.PutAsJsonAsync($"/api/companies/{rank}", updatedCompanyDto);
+        putResponse.EnsureSuccessStatusCode();
+
+        var content = await putResponse.Content.ReadAsStringAsync();
+        Assert.Contains("UpdatedPutCo", content);
+        Assert.Contains("Austin", content);
+    }
+    
+    [Fact]
+    public async Task DeleteCompany_RemovesExistingCompany()
+    {
+        // Dodaj firmę do usunięcia
+        var companyDto = new
+        {
+            profile = "Do usunięcia",
+            name = "DeleteCo",
+            url = "http://deleteco.example.com",
+            state = "NY",
+            revenue = "3M",
+            growthPercent = "30%",
+            industry = "HR",
+            workers = "80",
+            previousWorkers = "70",
+            founded = 2018,
+            yrsOnList = 3,
+            metro = "NYC",
+            city = "New York"
+        };
+
+        var postResponse = await _client.PostAsJsonAsync("/api/companies", companyDto);
+        postResponse.EnsureSuccessStatusCode();
+
+        var createdCompany = await postResponse.Content.ReadFromJsonAsync<CompanyEntity>();
+        var rank = createdCompany?.Rank ?? throw new Exception("Nie udało się pobrać rank.");
+
+        // Usuń firmę
+        var deleteResponse = await _client.DeleteAsync($"/api/companies/{rank}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        // Sprawdź, czy została faktycznie usunięta
+        var getResponse = await _client.GetAsync($"/api/companies/{rank}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
 }
