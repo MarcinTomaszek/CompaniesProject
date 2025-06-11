@@ -27,7 +27,7 @@ namespace WebApi.Controllers
             
         [HttpGet]
         [AllowAnonymous]
-        [EndpointDescription("Get list of companies for logged-in users.")]
+        [EndpointDescription("Get list of companies.")]
         [ProducesResponseType(typeof(CompaniesResponseDto), StatusCodes.Status200OK)]
         public IActionResult GetCompanies(
             [FromQuery, Description("Page number of the companies list (default is 1).")] int page = 1,
