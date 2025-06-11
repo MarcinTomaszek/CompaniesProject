@@ -135,84 +135,30 @@ public class ReviewsControllerTests : IClassFixture<AppTestFactory<Program>>
         var content = await getResponse.Content.ReadAsStringAsync();
         Assert.DoesNotContain("Do usunięcia", content);
     }
-
-    // [Fact]
-    // public async Task UpdateReview_ChangesContent()
-    // {
-    //     var factory = new AppTestFactory<Program> { SeedData = true };
-    //     var client = CreateAuthorizedClient(factory);
-    //     
-    //     var review = new { content = "Stara treść" };
-    //     var postResponse = await client.PostAsJsonAsync("/api/companies/1/reviews", review);
-    //     postResponse.EnsureSuccessStatusCode();
-    //
-    //     var created = await postResponse.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-    //     var reviewId = created?["reviewId"]?.ToString();
-    //
-    //     Assert.False(string.IsNullOrEmpty(reviewId), "Nie udało się uzyskać ID recenzji");
-    //     
-    //     var updatedReview = new { content = "Zmieniona treść" };
-    //     var putResponse = await client.PutAsJsonAsync($"/api/companies/1/reviews/{reviewId}", updatedReview);
-    //     putResponse.EnsureSuccessStatusCode();
-    //     
-    //     var getResponse = await client.GetAsync("/api/companies/1/reviews");
-    //     getResponse.EnsureSuccessStatusCode();
-    //
-    //     var content = await getResponse.Content.ReadAsStringAsync();
-    //     Assert.Contains("Zmieniona treść", content);
-    //     Assert.DoesNotContain("Stara treść", content);
-    // }
-    
+        
     [Fact]
-    public async Task UpdateReview_ChangesContent()
+    public async Task PutReview_UpdatesReviewContent()
     {
-        var factory = new AppTestFactory<Program> { SeedData = false };
-        var client = CreateAuthorizedClient(factory);
+        // 1. Utwórz recenzję
+        var originalContent = "Treść do edycji";
+        var updatedContent = "Zmieniona treść recenzji";
 
-        // 1. Dodaj firmę i pobierz ID
-        var company = new
-        {
-            rank = 1,
-            profile = "Profil testowy",
-            name = "Testowa Firma",
-            url = "http://firma.example.com",
-            state = "MA",
-            revenue = "1M",
-            growthPercent = "10%",
-            industry = "IT",
-            workers = "100",
-            previousWorkers = "80",
-            founded = 2020,
-            yrsOnList = 1,
-            metro = "Test City",
-            city = "Testville"
-        };
-        var resp = await client.PostAsJsonAsync("/api/companies", company);
-        resp.EnsureSuccessStatusCode();
-        var createdCompany = await resp.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-        var companyId = createdCompany?["id"]?.ToString();
-        Assert.False(string.IsNullOrEmpty(companyId));
-
-        // 2. Dodaj recenzję do utworzonej firmy
-        var review = new { content = "Stara treść" };
-        var postResponse = await client.PostAsJsonAsync($"/api/companies/{companyId}/reviews", review);
+        var postResponse = await _client.PostAsJsonAsync("/api/companies/1/reviews", new { content = originalContent });
         postResponse.EnsureSuccessStatusCode();
-        var created = await postResponse.Content.ReadFromJsonAsync<ReviewDto>();
-        Assert.NotNull(created);
-        var reviewId = created.Id;
 
-        // 3. Zaktualizuj recenzję
-        var updatedReview = new { content = "Zmieniona treść" };
-        var putResponse = await client.PutAsJsonAsync(
-            $"/api/companies/{companyId}/reviews/{reviewId}", updatedReview);
+        var created = await postResponse.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        var reviewId = created?["reviewId"]?.ToString();
+        Assert.False(string.IsNullOrEmpty(reviewId), "Nie udało się uzyskać ID recenzji");
+
+        // 2. Zaktualizuj recenzję
+        var putResponse = await _client.PutAsJsonAsync($"/api/companies/1/reviews/{reviewId}", updatedContent);
         putResponse.EnsureSuccessStatusCode();
 
-        // 4. Pobierz recenzje i sprawdź zmiany
-        var getResponse = await client.GetAsync($"/api/companies/{companyId}/reviews");
-        getResponse.EnsureSuccessStatusCode();
-        var content = await getResponse.Content.ReadAsStringAsync();
-        Assert.Contains("Zmieniona treść", content);
-        Assert.DoesNotContain("Stara treść", content);
+        var putContent = await putResponse.Content.ReadAsStringAsync();
+
+        // 3. Sprawdź, czy treść została zaktualizowana
+        Assert.Contains(updatedContent, putContent);
+        Assert.DoesNotContain(originalContent, putContent);
     }
 
 }
